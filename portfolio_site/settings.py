@@ -59,9 +59,17 @@ TEMPLATES = [
 WSGI_APPLICATION = 'portfolio_site.wsgi.application'
 
 # Database
-# Check if running on fly.io (using the FLY env var that fly.io sets)
-if os.getenv('FLY_APP_NAME'):
-    # Use the mounted volume path when on fly.io
+# Check which environment we're running in
+if os.getenv('RENDER', '') == 'true':
+    # Running on render.com
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
+    }
+elif os.getenv('FLY_APP_NAME'):
+    # Running on fly.io
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -69,7 +77,7 @@ if os.getenv('FLY_APP_NAME'):
         }
     }
 else:
-    # Use the default location during local development
+    # Local development
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -98,10 +106,16 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
-# Check if running on fly.io
-if os.getenv('FLY_APP_NAME'):
+
+# Set media root based on environment
+if os.getenv('RENDER', '') == 'true':
+    # For Render.com
+    MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+elif os.getenv('FLY_APP_NAME'):
+    # For fly.io
     MEDIA_ROOT = Path('/app/data/media')
 else:
+    # Local development
     MEDIA_ROOT = BASE_DIR / 'media'
 
 # Auth & login redirects
@@ -125,11 +139,25 @@ CSRF_COOKIE_SECURE = not DEBUG
 
 # CSRF Settings - adds trusted origins for CSRF validation
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000,http://127.0.0.1:8000').split(',')
-# Always add your fly.io domain to make sure it's included
+
+# Add deployment domains based on environment
 if os.getenv('FLY_APP_NAME'):
+    # Add fly.io domain
     fly_domain = f"https://{os.getenv('FLY_APP_NAME')}.fly.dev"
     if fly_domain not in CSRF_TRUSTED_ORIGINS:
         CSRF_TRUSTED_ORIGINS.append(fly_domain)
+
+# For Render.com domains
+if os.getenv('RENDER_EXTERNAL_URL'):
+    render_url = os.getenv('RENDER_EXTERNAL_URL')
+    if render_url not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(render_url)
+    
+    # Also add the onrender.com domain
+    if 'onrender.com' in render_url:
+        onrender_domain = f"https://{os.environ.get('RENDER_SERVICE_NAME')}.onrender.com"
+        if onrender_domain not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(onrender_domain)
 
 SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True

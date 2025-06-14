@@ -1,13 +1,17 @@
 services:
   - type: web
-    name: portfolio
+    name: portfolio-vedhanth
     runtime: python
-    buildCommand: "pip install -r requirements.txt && python manage.py migrate && python manage.py collectstatic --noinput"
+    buildCommand: "./build.sh"
     startCommand: "gunicorn portfolio_site.wsgi:application"
+    plan: free
     envVars:
       - key: SECRET_KEY
-        value: your-very-secret-key
+        generateValue: true
       - key: DEBUG
         value: "False"
       - key: ALLOWED_HOSTS
-        value: ".onrender.com"
+        value: ".onrender.com,localhost,127.0.0.1"
+      - key: PYTHON_VERSION
+        value: "3.10.0"
+    autoDeploy: true
