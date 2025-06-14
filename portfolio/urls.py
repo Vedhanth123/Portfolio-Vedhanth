@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from . import dashboard_views
 from . import auth_views
+from .health import health_check
 
 app_name = 'portfolio'
 
@@ -36,4 +37,7 @@ urlpatterns = [    # Public views
     path('dashboard/project/<int:project_id>/toggle-featured/', dashboard_views.toggle_project_featured, name='toggle_project_featured'),
     path('dashboard/skill/<int:skill_id>/toggle-featured/', dashboard_views.toggle_skill_featured, name='toggle_skill_featured'),
     path('dashboard/message/<int:message_id>/mark-read/', dashboard_views.mark_message_read, name='mark_message_read'),
+
+    # Health check for fly.io
+    path('health/', health_check, name='health_check'),
 ]

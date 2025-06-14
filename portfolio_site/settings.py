@@ -59,12 +59,23 @@ TEMPLATES = [
 WSGI_APPLICATION = 'portfolio_site.wsgi.application'
 
 # Database
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Check if running on fly.io (using the FLY env var that fly.io sets)
+if os.getenv('FLY_APP_NAME'):
+    # Use the mounted volume path when on fly.io
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': Path('/app/data/db.sqlite3'),
+        }
     }
-}
+else:
+    # Use the default location during local development
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Password validators
 AUTH_PASSWORD_VALIDATORS = [
@@ -87,7 +98,11 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# Check if running on fly.io
+if os.getenv('FLY_APP_NAME'):
+    MEDIA_ROOT = Path('/app/data/media')
+else:
+    MEDIA_ROOT = BASE_DIR / 'media'
 
 # Auth & login redirects
 LOGIN_URL = '/auth/login/'
@@ -107,6 +122,14 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 SECURE_SSL_REDIRECT = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
+
+# CSRF Settings - adds trusted origins for CSRF validation
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost:8000,http://127.0.0.1:8000').split(',')
+# Always add your fly.io domain to make sure it's included
+if os.getenv('FLY_APP_NAME'):
+    fly_domain = f"https://{os.getenv('FLY_APP_NAME')}.fly.dev"
+    if fly_domain not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(fly_domain)
 
 SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True

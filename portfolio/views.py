@@ -4,7 +4,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.views.decorators.csrf import csrf_exempt
@@ -22,6 +22,8 @@ from .forms import (
     AboutSectionForm, SkillForm, ProjectForm, 
     ExperienceForm, EducationForm, ContactForm
 )
+
+import os
 
 def home(request):
     """Homepage view with portfolio overview"""
@@ -109,11 +111,6 @@ def experience(request):
         about = AboutSection.objects.first()
     except AboutSection.DoesNotExist:
         about = None
-    
-    # Debug info
-    print("Experiences count:", experiences.count())
-    print("Education count:", education.count())
-    print("Skills count:", sum(len(skills) for skills in skill_categories.values()))
     
     context = {
         'experiences': experiences,
@@ -351,4 +348,17 @@ def delete_skill(request, skill_id):
         return JsonResponse({'success': True})
     return JsonResponse({'success': False})
 
-# Create your views here.
+# Add this function for serving favicon
+def favicon_view(request):
+    favicon_path = os.path.join(settings.STATIC_ROOT, 'img', 'favicon.ico')
+    if os.path.exists(favicon_path):
+        with open(favicon_path, 'rb') as f:
+            return HttpResponse(f.read(), content_type="image/x-icon")
+    else:
+        # Fallback to the one in the root directory
+        root_favicon = os.path.join(settings.BASE_DIR, 'favicon.ico')
+        if os.path.exists(root_favicon):
+            with open(root_favicon, 'rb') as f:
+                return HttpResponse(f.read(), content_type="image/x-icon")
+    
+    return HttpResponse(status=404)

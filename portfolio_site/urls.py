@@ -20,10 +20,12 @@ from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
 from portfolio import auth_views as custom_auth_views
+from portfolio.views import favicon_view
 
 urlpatterns = [
     path('', include('portfolio.urls')),
     path('admin/', admin.site.urls),
+    path('favicon.ico', favicon_view, name='favicon'),
     
     # Authentication URLs for password reset
     path('accounts/login/', auth_views.LoginView.as_view(template_name='registration/login.html'), name='login'),
@@ -34,6 +36,8 @@ urlpatterns = [
     path('accounts/reset/done/', auth_views.PasswordResetCompleteView.as_view(template_name='registration/password_reset_complete.html'), name='password_reset_complete'),
 ]
 
-# Serve media files in all environments
-# This is not ideal for production, but will work for your render.com deployment
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve media files during development only
+# In production (fly.io), we use the [[statics]] directive in fly.toml
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
